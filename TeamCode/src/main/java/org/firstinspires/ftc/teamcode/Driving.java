@@ -33,6 +33,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -73,6 +74,8 @@ public class Driving extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private DcMotor leftSlide = null;
+    private DcMotor rightSlide = null;
 
     @Override
     public void runOpMode() {
@@ -83,6 +86,8 @@ public class Driving extends LinearOpMode {
         leftBackDrive  = hardwareMap.get(DcMotor.class, "leftBackMotor");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFrontMotor");
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBackMotor");
+        leftSlide = hardwareMap.get(DcMotor.class, "leftLinearSlide");
+        rightSlide = hardwareMap.get(DcMotor.class, "rightLinearSlide");
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -98,6 +103,7 @@ public class Driving extends LinearOpMode {
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightSlide.setDirection(DcMotor.Direction.REVERSE);
 
         // Wait for the game to start (driver presses PLAY)
         telemetry.addData("Status", "Initialized");
@@ -163,5 +169,17 @@ public class Driving extends LinearOpMode {
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
             telemetry.update();
+
+            // Uses the trigger to bring the linear slides up and down
+            double upPower = gamepad2.right_trigger;
+            double downPower = gamepad2.left_trigger;
+            double lift = upPower - downPower;
+
+            // Contains the requests from the triggers to raise or lower the slides
+            leftSlide.setPower(lift);
+            rightSlide.setPower(-lift);
+//            leftSlide.setPower(downPower);
+//            rightSlide.setPower(-downPower);
+
         }
     }}
