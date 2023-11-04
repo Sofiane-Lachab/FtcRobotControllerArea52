@@ -80,6 +80,7 @@ public class Driving extends LinearOpMode {
     private Servo leftArmServo = null;
     private Servo rightArmServo = null;
     private Servo clawServo = null;
+    private Servo armServos = null;
 
     @Override
     public void runOpMode() {
@@ -95,6 +96,7 @@ public class Driving extends LinearOpMode {
         leftArmServo = hardwareMap.servo.get("leftArmServo");
         rightArmServo = hardwareMap.servo.get("rightArmServo");
         clawServo = hardwareMap.servo.get("clawServo");
+//         armServos = hardwareMap.servo.get("armServos");
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -111,6 +113,8 @@ public class Driving extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightSlide.setDirection(DcMotor.Direction.REVERSE);
+//         armServos.setDirection(Servo.Direction.REVERSE);
+        leftArmServo.setDirection(Servo.Direction.REVERSE);
         rightArmServo.setDirection(Servo.Direction.REVERSE);
 
         // Wait for the game to start (driver presses PLAY)
@@ -193,18 +197,28 @@ public class Driving extends LinearOpMode {
             // Uses player 2's triggers to control the arms angle and claw
             double forwardLift = gamepad2.right_trigger;
             double downwardLift = gamepad2.left_trigger;
-            double clawGrab = 0;
+            double clawGrab = 1;
 
-            leftArmServo.setPosition(forwardLift);
-            rightArmServo.setPosition(forwardLift);
-            leftArmServo.setPosition(-downwardLift + 1);
-            rightArmServo.setPosition(-downwardLift + 1);
+            if(forwardLift > 0)
+            {
+                rightArmServo.setPosition(forwardLift);
+                leftArmServo.setPosition(forwardLift);
+//                 armServos.setPosition(forwardLift);
+            }
+            if(downwardLift > 0)
+            {
+                rightArmServo.setPosition(-downwardLift + 1);
+                leftArmServo.setPosition(-downwardLift + 1);
+//                 armServos.setPosition(-downwardLift + 1);
+            }
 
-            if(gamepad2.a)
-                clawGrab = 1;
-            if(gamepad2.b)
-                clawGrab = 0;
-            clawServo.setPosition(clawGrab);
+
+
+//             if(gamepad2.a)
+//                 clawGrab = 1;
+//             if(gamepad2.b)
+//                 clawGrab = 0;
+//             clawServo.setPosition(clawGrab);
         }
         }
     }
