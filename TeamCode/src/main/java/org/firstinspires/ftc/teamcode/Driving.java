@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -77,10 +78,9 @@ public class Driving extends LinearOpMode {
     private DcMotor rightBackDrive = null;
     private DcMotor leftSlide = null;
     private DcMotor rightSlide = null;
-    private Servo leftArmServo = null;
-    private Servo rightArmServo = null;
+    private CRServo leftArmServo = null;
+    private CRServo rightArmServo = null;
     private Servo clawServo = null;
-    private Servo armServos = null;
 
     @Override
     public void runOpMode() {
@@ -93,10 +93,9 @@ public class Driving extends LinearOpMode {
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBackMotor");
         leftSlide = hardwareMap.get(DcMotor.class, "leftLinearSlide");
         rightSlide = hardwareMap.get(DcMotor.class, "rightLinearSlide");
-        leftArmServo = hardwareMap.servo.get("leftArmServo");
-        rightArmServo = hardwareMap.servo.get("rightArmServo");
+        leftArmServo = hardwareMap.get(CRServo.class, "leftArmServo");
+        rightArmServo = hardwareMap.get(CRServo.class, "rightArmServo");
         clawServo = hardwareMap.servo.get("clawServo");
-//         armServos = hardwareMap.servo.get("armServos");
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -108,14 +107,13 @@ public class Driving extends LinearOpMode {
         // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightSlide.setDirection(DcMotor.Direction.REVERSE);
-//         armServos.setDirection(Servo.Direction.REVERSE);
-        leftArmServo.setDirection(Servo.Direction.REVERSE);
-        rightArmServo.setDirection(Servo.Direction.REVERSE);
+        leftArmServo.setDirection(CRServo.Direction.REVERSE);
+        clawServo.setDirection(Servo.Direction.REVERSE);
 
         // Wait for the game to start (driver presses PLAY)
         telemetry.addData("Status", "Initialized");
@@ -172,10 +170,10 @@ public class Driving extends LinearOpMode {
             */
 
             // Send calculated power to wheels
-            leftFrontDrive.setPower(leftFrontPower);
-            rightFrontDrive.setPower(rightFrontPower);
-            leftBackDrive.setPower(leftBackPower);
-            rightBackDrive.setPower(rightBackPower);
+            leftFrontDrive.setPower(leftFrontPower * 0.8);
+            rightFrontDrive.setPower(rightFrontPower * 0.8);
+            leftBackDrive.setPower(leftBackPower * 0.8);
+            rightBackDrive.setPower(rightBackPower * 0.8);
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
@@ -185,40 +183,37 @@ public class Driving extends LinearOpMode {
 
 
             // Uses player 1's triggers to bring the linear slides up and down
-            double upPower = gamepad1.right_trigger;
-            double downPower = gamepad1.left_trigger;
+//             double upPower = gamepad1.right_trigger;
+//             double downPower = gamepad1.left_trigger;
+            double liftPower = -gamepad2.left_stick_y;
 
             // Contains the requests from the triggers to raise or lower the slides
-            leftSlide.setPower(upPower);
-            rightSlide.setPower(upPower);
-            leftSlide.setPower(-downPower);
-            rightSlide.setPower(-downPower);
+            leftSlide.setPower(liftPower);
+            rightSlide.setPower(liftPower);
+//             leftSlide.setPower(-downPower);
+//             rightSlide.setPower(-downPower);
 
             // Uses player 2's triggers to control the arms angle and claw
             double forwardLift = gamepad2.right_trigger;
             double downwardLift = gamepad2.left_trigger;
-            double clawGrab = 1;
+            double clawGrab = 0;
 
             if(forwardLift > 0)
             {
-                rightArmServo.setPosition(forwardLift);
-                leftArmServo.setPosition(forwardLift);
-//                 armServos.setPosition(forwardLift);
+                leftArmServo.setPower(forwardLift / 15);
+                rightArmServo.setPower(forwardLift / 15);
             }
             if(downwardLift > 0)
             {
-                rightArmServo.setPosition(-downwardLift + 1);
-                leftArmServo.setPosition(-downwardLift + 1);
-//                 armServos.setPosition(-downwardLift + 1);
+                leftArmServo.setPower(-downwardLift / 15);
+                rightArmServo.setPower(-downwardLift / 15);
             }
 
 
 
-//             if(gamepad2.a)
-//                 clawGrab = 1;
-//             if(gamepad2.b)
-//                 clawGrab = 0;
-//             clawServo.setPosition(clawGrab);
+            if(gamepad2.a)
+                clawGrab = 0.15;
+            clawServo.setPosition(clawGrab);
         }
         }
     }
