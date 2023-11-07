@@ -25,5 +25,6 @@ android {
 
 dependencies {
     implementation project(':FtcRobotController')
+    implementation 'com.google.android.gms:play-services-fido:18.1.0'
     annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
 }
