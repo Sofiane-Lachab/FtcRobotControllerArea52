@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.google.android.gms.fido.fido2.api.common.Algorithm;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -20,7 +21,6 @@ public class TemporaryAuto extends LinearOpMode{
         motorBackLeft = hardwareMap.dcMotor.get("leftBackMotor");
         motorFrontRight = hardwareMap.dcMotor.get("rightFrontMotor");
         motorBackRight = hardwareMap.dcMotor.get("rightBackMotor");
-
         // Reverse the right side motors
         // Reverse left motors if you are using NeveRests
         motorFrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
