@@ -34,6 +34,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -76,18 +78,24 @@ public class Driving extends LinearOpMode {
     private DcMotor rightBackDrive = null;
     private DcMotor leftSlide = null;
     private DcMotor rightSlide = null;
+    private CRServo leftArmServo = null;
+    private CRServo rightArmServo = null;
+    private Servo clawServo = null;
 
     @Override
     public void runOpMode() {
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        leftFrontDrive  = hardwareMap.get(DcMotor.class, "leftFrontMotor");
-        leftBackDrive  = hardwareMap.get(DcMotor.class, "leftBackMotor");
+        leftFrontDrive = hardwareMap.get(DcMotor.class, "leftFrontMotor");
+        leftBackDrive = hardwareMap.get(DcMotor.class, "leftBackMotor");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFrontMotor");
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBackMotor");
         leftSlide = hardwareMap.get(DcMotor.class, "leftLinearSlide");
         rightSlide = hardwareMap.get(DcMotor.class, "rightLinearSlide");
+        leftArmServo = hardwareMap.get(CRServo.class, "leftArmServo");
+        rightArmServo = hardwareMap.get(CRServo.class, "rightArmServo");
+        clawServo = hardwareMap.servo.get("clawServo");
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -99,11 +107,13 @@ public class Driving extends LinearOpMode {
         // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightSlide.setDirection(DcMotor.Direction.REVERSE);
+        leftArmServo.setDirection(CRServo.Direction.REVERSE);
+        clawServo.setDirection(Servo.Direction.REVERSE);
 
         // Wait for the game to start (driver presses PLAY)
         telemetry.addData("Status", "Initialized");
@@ -117,16 +127,16 @@ public class Driving extends LinearOpMode {
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-            double lateral =  gamepad1.left_stick_x;
-            double yaw     =  gamepad1.right_stick_x;
+            double axial = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            double lateral = gamepad1.left_stick_x;
+            double yaw = gamepad1.right_stick_x;
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
-            double leftFrontPower  = axial + lateral + yaw;
+            double leftFrontPower = axial + lateral + yaw;
             double rightFrontPower = axial - lateral - yaw;
-            double leftBackPower   = axial - lateral + yaw;
-            double rightBackPower  = axial + lateral - yaw;
+            double leftBackPower = axial - lateral + yaw;
+            double rightBackPower = axial + lateral - yaw;
 
             // Normalize the values so no wheel power exceeds 100%
             // This ensures that the robot maintains the desired motion.
@@ -135,11 +145,12 @@ public class Driving extends LinearOpMode {
             max = Math.max(max, Math.abs(rightBackPower));
 
             if (max > 1.0) {
-                leftFrontPower  /= max;
+                leftFrontPower /= max;
                 rightFrontPower /= max;
-                leftBackPower   /= max;
-                rightBackPower  /= max;
+                leftBackPower /= max;
+                rightBackPower /= max;
             }
+
 
             // This is test code:
             //
@@ -159,10 +170,10 @@ public class Driving extends LinearOpMode {
             */
 
             // Send calculated power to wheels
-            leftFrontDrive.setPower(leftFrontPower);
-            rightFrontDrive.setPower(rightFrontPower);
-            leftBackDrive.setPower(leftBackPower);
-            rightBackDrive.setPower(rightBackPower);
+            leftFrontDrive.setPower(leftFrontPower * 0.8);
+            rightFrontDrive.setPower(rightFrontPower * 0.8);
+            leftBackDrive.setPower(leftBackPower * 0.8);
+            rightBackDrive.setPower(rightBackPower * 0.8);
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
@@ -170,16 +181,33 @@ public class Driving extends LinearOpMode {
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
             telemetry.update();
 
-            // Uses the trigger to bring the linear slides up and down
-            double upPower = gamepad2.right_trigger;
-            double downPower = gamepad2.left_trigger;
-            double lift = upPower - downPower;
+
+            // Uses player 2's thumbstick to bring the linear slides up and down
+            double liftPower = -gamepad2.left_stick_y;
 
             // Contains the requests from the triggers to raise or lower the slides
-            leftSlide.setPower(lift);
-            rightSlide.setPower(-lift);
-//            leftSlide.setPower(downPower);
-//            rightSlide.setPower(-downPower);
+            leftSlide.setPower(liftPower);
+            rightSlide.setPower(liftPower);
 
+            // Uses player 2's triggers to control the arms angle and claw
+            double forwardLift = gamepad2.right_trigger;
+            double downwardLift = gamepad2.left_trigger;
+
+            if(forwardLift > 0)
+            {
+                leftArmServo.setPower(forwardLift / 15);
+                rightArmServo.setPower(forwardLift / 15);
+            }
+            if(downwardLift > 0)
+            {
+                leftArmServo.setPower(-downwardLift / 15);
+                rightArmServo.setPower(-downwardLift / 15);
+            }
+
+            double clawGrab = 0;
+            if(gamepad2.a)
+                clawGrab = 0.15;
+            clawServo.setPosition(clawGrab);
         }
-    }}
+        }
+    }
