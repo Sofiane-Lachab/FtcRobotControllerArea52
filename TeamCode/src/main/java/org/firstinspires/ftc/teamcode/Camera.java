@@ -44,6 +44,9 @@ package org.firstinspires.ftc.robotcontroller.external.samples;
 
         import java.util.concurrent.TimeUnit;
 
+        import org.firstinspires.ftc.teamcode.util.AssetsTrajectoryManager;
+
+
 /*
  * This OpMode illustrates how to use the DFRobot HuskyLens.
  *

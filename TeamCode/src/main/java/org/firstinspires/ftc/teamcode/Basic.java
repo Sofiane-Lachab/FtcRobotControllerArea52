@@ -31,10 +31,12 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.teamcode.util.MyRunnable1;
+import org.firstinspires.ftc.teamcode.util.MyRunnable2;
 
 /*
  * This file contains an example of a Linear "OpMode".
@@ -66,8 +68,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 //hi this yo mom
 @TeleOp(name="Basic: Omni Linear OpMode", group="Linear OpMode")
 
-public class Basic extends LinearOpMode {
-
+public class Basic extends LinearOpMode
+{
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor leftFrontDrive = null;
@@ -76,12 +78,13 @@ public class Basic extends LinearOpMode {
     private DcMotor rightBackDrive = null;
     private DcMotor leftSlide = null;
     private DcMotor rightSlide = null;
-    private CRServo leftArmServo = null;
-    private CRServo rightArmServo = null;
+    private Servo leftArmServo = null;
+    private Servo rightArmServo = null;
     private Servo clawServo = null;
+    private Servo planeServo = null;
 
     @Override
-    public void runOpMode() {
+    public void runOpMode() throws InterruptedException {
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
@@ -91,9 +94,10 @@ public class Basic extends LinearOpMode {
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBackMotor");
         leftSlide = hardwareMap.get(DcMotor.class, "leftLinearSlide");
         rightSlide = hardwareMap.get(DcMotor.class, "rightLinearSlide");
-        leftArmServo = hardwareMap.get(CRServo.class, "leftArmServo");
-        rightArmServo = hardwareMap.get(CRServo.class, "rightArmServo");
+        leftArmServo = hardwareMap.servo.get("leftArmServo");
+        rightArmServo = hardwareMap.servo.get("rightArmServo");
         clawServo = hardwareMap.servo.get("clawServo");
+        planeServo = hardwareMap.servo.get("planeServo");
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -110,18 +114,26 @@ public class Basic extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightSlide.setDirection(DcMotor.Direction.REVERSE);
-        leftArmServo.setDirection(CRServo.Direction.REVERSE);
+        leftArmServo.setDirection(Servo.Direction.REVERSE);
         clawServo.setDirection(Servo.Direction.REVERSE);
+
+        leftSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
 
         // Wait for the game to start (driver presses PLAY)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
+        double leftStartPos = leftArmServo.getPosition();
+        double rightStartPos = rightArmServo.getPosition();
+
         waitForStart();
         runtime.reset();
 
         // run until the end of the match (driver presses STOP)
-        while (opModeIsActive()) {
+        while (opModeIsActive())
+        {
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
@@ -167,11 +179,52 @@ public class Basic extends LinearOpMode {
             rightBackPower  = gamepad1.b ? 1.0 : 0.0;  // B gamepad
             */
 
+            // Slows the wheels down by decreasing the variables for the power to the motors
+            if (gamepad1.left_trigger > 0)
+            {
+                leftFrontPower *= 0.2;
+                rightFrontPower *= 0.2;
+                leftBackPower *= 0.2;
+                rightFrontPower *= 0.2;
+            }
+
+            if(gamepad1.left_bumper)
+            {
+                leftFrontPower *= 0.4;
+                rightFrontPower *= 0.4;
+                leftBackPower *= 0.4;
+                rightFrontPower *= 0.4;
+            }
+
+            if(gamepad1.right_trigger > 0)
+            {
+                leftFrontPower *= 0.6;
+                rightFrontPower *= 0.6;
+                leftBackPower *= 0.6;
+                rightFrontPower *= 0.6;
+            }
+
+            if(gamepad1.right_bumper)
+            {
+                leftFrontPower *= 0.8;
+                rightFrontPower *= 0.8;
+                leftBackPower *= 0.8;
+                rightFrontPower *= 0.8;
+            }
+
+            if(gamepad2.left_trigger > 0)
+            {
+                leftFrontPower *= 0;
+                rightFrontPower *= 0;
+                leftBackPower *= 0;
+                rightFrontPower *= 0;
+            }
+
             // Send calculated power to wheels
-            leftFrontDrive.setPower(leftFrontPower * 0.8);
-            rightFrontDrive.setPower(rightFrontPower * 0.8);
-            leftBackDrive.setPower(leftBackPower * 0.8);
-            rightBackDrive.setPower(rightBackPower * 0.8);
+            leftFrontDrive.setPower(leftFrontPower);
+            rightFrontDrive.setPower(rightFrontPower);
+            leftBackDrive.setPower(leftBackPower);
+            rightBackDrive.setPower(rightBackPower);
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
@@ -187,25 +240,43 @@ public class Basic extends LinearOpMode {
             leftSlide.setPower(liftPower);
             rightSlide.setPower(liftPower);
 
-            // Uses player 2's triggers to control the arms angle and claw
-            double forwardLift = gamepad2.right_trigger;
-            double downwardLift = gamepad2.left_trigger;
 
-            if(forwardLift > 0)
-            {
-                leftArmServo.setPower(forwardLift / 15);
-                rightArmServo.setPower(forwardLift / 15);
-            }
-            if(downwardLift > 0)
-            {
-                leftArmServo.setPower(-downwardLift / 15);
-                rightArmServo.setPower(-downwardLift / 15);
-            }
-
-            double clawGrab = 0;
             if(gamepad2.a)
-                clawGrab = 0.15;
-            clawServo.setPosition(clawGrab);
-        }
+            {
+               leftArmServo.setPosition(0.02);
+            }
+            if(gamepad2.a)
+            {
+                rightArmServo.setPosition(0.02);
+            }
+            if(gamepad2.b)
+            {
+                leftArmServo.setPosition(0.15);
+            }
+            if(gamepad2.b)
+            {
+                rightArmServo.setPosition(0.15);
+            }
+            if(gamepad2.x)
+            {
+                leftArmServo.setPosition(0.30);
+            }
+            if(gamepad2.x)
+            {
+                rightArmServo.setPosition(0.30);
+            }
+
+
+            if(gamepad2.left_bumper)
+                clawServo.setPosition(0.2);
+            if(gamepad2.right_bumper)
+                clawServo.setPosition(0.35);
+
+            if(gamepad1.a)
+                planeServo.setPosition(0.5);
+
+
+
         }
     }
+}
