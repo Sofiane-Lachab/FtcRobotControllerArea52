@@ -39,7 +39,7 @@ public class BlueShort extends LinearOpMode{
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightArmServo.setDirection(Servo.Direction.REVERSE);
+        leftArmServo.setDirection(Servo.Direction.REVERSE);
         clawServo.setDirection(Servo.Direction.REVERSE);
 
 
@@ -57,7 +57,7 @@ public class BlueShort extends LinearOpMode{
 
 
         waitForStart();
-        clawServo.setPosition(0.35);
+        clawServo.setPosition(1);
         Thread.sleep(1500);
         servosUp.start();
         Thread.sleep(2000);
@@ -66,15 +66,12 @@ public class BlueShort extends LinearOpMode{
         turnLeft(drive_power);
         Thread.sleep(1100);
         forward(drive_power);
-        Thread.sleep(2500);
+        Thread.sleep(1800);
         stopDriving();
-        clawServo.setPosition(0.2);
+        clawServo.setPosition(0.85);
         Thread.sleep(1000);
         backward(drive_power);
         Thread.sleep(100);
-        stopDriving();
-        servosDown.start();
-        Thread.sleep(1000);
         stopDriving();
     }
 

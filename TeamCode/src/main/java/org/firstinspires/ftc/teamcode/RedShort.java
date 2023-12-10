@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.util.MyRunnable1;
 import org.firstinspires.ftc.teamcode.util.MyRunnable2;
+import org.firstinspires.ftc.teamcode.util.MyRunnable3;
 import org.firstinspires.ftc.teamcode.util.MyRunnable4;
 
 @Autonomous
@@ -31,13 +32,14 @@ public class RedShort extends LinearOpMode{
         rightBackDrive = hardwareMap.dcMotor.get("rightBackMotor");
         leftArmServo = hardwareMap.servo.get("leftArmServo");
         rightArmServo = hardwareMap.servo.get("rightArmServo");
+        clawServo = hardwareMap.servo.get("clawServo");
         // Reverse the right side motors
         // Reverse left motors if you are using NeveRests
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightArmServo.setDirection(Servo.Direction.REVERSE);
+        leftArmServo.setDirection(Servo.Direction.REVERSE);
         clawServo.setDirection(Servo.Direction.REVERSE);
 
 
@@ -47,16 +49,29 @@ public class RedShort extends LinearOpMode{
         rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        MyRunnable4 set = new MyRunnable4(leftArmServo, rightArmServo);
-        Thread reset = new Thread(set);
+        // Runnables and Threads
+        MyRunnable3 upServos = new MyRunnable3(leftArmServo, rightArmServo);
+        MyRunnable4 downServos = new MyRunnable4(leftArmServo, rightArmServo);
+        Thread servosUp = new Thread(upServos);
+        Thread servosDown = new Thread(downServos);
+
 
         waitForStart();
-        reset.start();
-        Thread.sleep(500);
+        clawServo.setPosition(1);
+        Thread.sleep(1500);
+        servosUp.start();
+        Thread.sleep(2000);
         forward(drive_power);
         Thread.sleep(1000);
-        strafeRight(drive_power);
-        Thread.sleep(2000);
+        turnRight(drive_power);
+        Thread.sleep(1100);
+        forward(drive_power);
+        Thread.sleep(1800);
+        stopDriving();
+        clawServo.setPosition(0.85);
+        Thread.sleep(1000);
+        backward(drive_power);
+        Thread.sleep(100);
         stopDriving();
     }
 

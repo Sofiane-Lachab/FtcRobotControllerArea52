@@ -268,15 +268,13 @@ public class Basic extends LinearOpMode
 
 
             if(gamepad2.left_bumper)
-                clawServo.setPosition(0.2);
+                clawServo.setPosition(0.85);
             if(gamepad2.right_bumper)
-                clawServo.setPosition(0.35);
+                clawServo.setPosition(1);
+
 
             if(gamepad1.a)
                 planeServo.setPosition(0.5);
-
-
-
         }
     }
 }
