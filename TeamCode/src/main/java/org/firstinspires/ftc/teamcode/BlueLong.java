@@ -14,7 +14,7 @@ import org.firstinspires.ftc.teamcode.util.MyRunnable4;
 
 @Autonomous
 
-public class RedShort extends LinearOpMode{
+public class BlueLong extends LinearOpMode{
 
     DcMotor leftFrontDrive = null;
     DcMotor leftBackDrive = null;
@@ -58,20 +58,26 @@ public class RedShort extends LinearOpMode{
 
         waitForStart();
         clawServo.setPosition(1);
-        Thread.sleep(1500);             // probably don't need to change this
-        servosUp.start();
-        Thread.sleep(2000);             // probably don't need to change this
+        Thread.sleep(1500);                 // probably don't need to change this
         forward(drive_power);
-        Thread.sleep(1000);             // increase if doesn't go forward enough, decrease if too far forward
-        turnRight(drive_power);
-        Thread.sleep(1100);             // increase if doesn't turn right enough, decrease if too far right
+        Thread.sleep(200);                  // increase if doesn't go forward enough, decrease if too far forward
+        turnLeft(drive_power);
+        Thread.sleep(1100);                 // increase if doesn't turn left enough, decrease if turn too far left
         forward(drive_power);
-        Thread.sleep(1600);             // increase if it doesn't go forward enough second time, decrease if too far forward
+        Thread.sleep(3200);                 // increase if doesn't go forward enough second time, decrease if too far forward
+        strafeRight(drive_power);
+        Thread.sleep(1500);                 // increase if doesn't go right enough, decrease if go too far right
         stopDriving();
+        servosUp.start();
+        Thread.sleep(1000);                 // probably don't need to change this
+        forward(drive_power);
+        Thread.sleep(800);                  // increase if doesn't go forward enough third time, decrease if too far forward
+        stopDriving();
+        Thread.sleep(500);                  // probably don't need to change this
         clawServo.setPosition(0.85);
-        Thread.sleep(1000);             // probably don't need to change this
+        Thread.sleep(1000);                 // probably don't need to change this
         backward(drive_power);
-        Thread.sleep(100);              // probably don't need to change this
+        Thread.sleep(100);                  // probably don't need to change this
         stopDriving();
     }
 
