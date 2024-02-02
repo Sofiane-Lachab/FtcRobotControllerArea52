@@ -92,12 +92,12 @@ public class Basic extends LinearOpMode
         leftBackDrive = hardwareMap.get(DcMotor.class, "leftBackMotor");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFrontMotor");
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBackMotor");
-        leftSlide = hardwareMap.get(DcMotor.class, "leftLinearSlide");
-        rightSlide = hardwareMap.get(DcMotor.class, "rightLinearSlide");
-        leftArmServo = hardwareMap.servo.get("leftArmServo");
-        rightArmServo = hardwareMap.servo.get("rightArmServo");
-        clawServo = hardwareMap.servo.get("clawServo");
-        planeServo = hardwareMap.servo.get("planeServo");
+//         leftSlide = hardwareMap.get(DcMotor.class, "leftLinearSlide");
+//         rightSlide = hardwareMap.get(DcMotor.class, "rightLinearSlide");
+         leftArmServo = hardwareMap.servo.get("leftArmServo");
+         rightArmServo = hardwareMap.servo.get("rightArmServo");
+//         clawServo = hardwareMap.servo.get("clawServo");
+//         planeServo = hardwareMap.servo.get("planeServo");
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -110,23 +110,23 @@ public class Basic extends LinearOpMode
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightSlide.setDirection(DcMotor.Direction.REVERSE);
-        leftArmServo.setDirection(Servo.Direction.REVERSE);
-        clawServo.setDirection(Servo.Direction.REVERSE);
-
-        leftSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+//         rightSlide.setDirection(DcMotor.Direction.REVERSE);
+//         leftArmServo.setDirection(Servo.Direction.REVERSE);
+//         clawServo.setDirection(Servo.Direction.REVERSE);
+//
+//         leftSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//         rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
         // Wait for the game to start (driver presses PLAY)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-        double leftStartPos = leftArmServo.getPosition();
-        double rightStartPos = rightArmServo.getPosition();
+//         double leftStartPos = leftArmServo.getPosition();
+//         double rightStartPos = rightArmServo.getPosition();
 
         waitForStart();
         runtime.reset();
@@ -233,48 +233,60 @@ public class Basic extends LinearOpMode
             telemetry.update();
 
 
-            // Uses player 2's thumbstick to bring the linear slides up and down
-            double liftPower = -gamepad2.left_stick_y;
+//             // Uses player 2's thumbstick to bring the linear slides up and down
+//             double liftPower = -gamepad2.left_stick_y;
+//
+//             // Contains the requests from the triggers to raise or lower the slides
+//             leftSlide.setPower(liftPower);
+//             rightSlide.setPower(liftPower);
+//
+//
+//             if(gamepad2.a)
+//             {
+//                leftArmServo.setPosition(0.02);
+//             }
+//             if(gamepad2.a)
+//             {
+//                 rightArmServo.setPosition(0.02);
+//             }
+//             if(gamepad2.b)
+//             {
+//                 leftArmServo.setPosition(0.15);
+//             }
+//             if(gamepad2.b)
+//             {
+//                 rightArmServo.setPosition(0.15);
+//             }
+//             if(gamepad2.x)
+//             {
+//                 leftArmServo.setPosition(0.30);
+//             }
+//             if(gamepad2.x)
+//             {
+//                 rightArmServo.setPosition(0.30);
+//             }
+//
+//
+//             if(gamepad2.left_bumper)
+//                 clawServo.setPosition(0.8);
+//             if(gamepad2.right_bumper)
+//                 clawServo.setPosition(1);
+//
+//
+//             if(gamepad1.a)
+//                 planeServo.setPosition(0.5);
 
-            // Contains the requests from the triggers to raise or lower the slides
-            leftSlide.setPower(liftPower);
-            rightSlide.setPower(liftPower);
+        public void raiseArms()
+        {
+            leftArmServo.setPosition(0.3);
+            rightArmServo.setPosition(0.3);
+        }
 
-
-            if(gamepad2.a)
-            {
-               leftArmServo.setPosition(0.02);
-            }
-            if(gamepad2.a)
-            {
-                rightArmServo.setPosition(0.02);
-            }
-            if(gamepad2.b)
-            {
-                leftArmServo.setPosition(0.15);
-            }
-            if(gamepad2.b)
-            {
-                rightArmServo.setPosition(0.15);
-            }
-            if(gamepad2.x)
-            {
-                leftArmServo.setPosition(0.30);
-            }
-            if(gamepad2.x)
-            {
-                rightArmServo.setPosition(0.30);
-            }
-
-
-            if(gamepad2.left_bumper)
-                clawServo.setPosition(0.8);
-            if(gamepad2.right_bumper)
-                clawServo.setPosition(1);
-
-
-            if(gamepad1.a)
-                planeServo.setPosition(0.5);
+        public void lowerArms()
+        {
+            leftArmServo.setPosition(0);
+            rightArmServo.setPosition(0);
+        }
         }
     }
 }
