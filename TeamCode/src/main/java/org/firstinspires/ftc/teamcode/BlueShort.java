@@ -36,8 +36,8 @@ public class BlueShort extends LinearOpMode{
         // Reverse the right side motors
         // Reverse left motors if you are using NeveRests
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
         leftArmServo.setDirection(Servo.Direction.REVERSE);
         clawServo.setDirection(Servo.Direction.REVERSE);
@@ -50,28 +50,21 @@ public class BlueShort extends LinearOpMode{
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Runnables and Threads
-        MyRunnable3 upServos = new MyRunnable3(leftArmServo, rightArmServo);
-        MyRunnable4 downServos = new MyRunnable4(leftArmServo, rightArmServo);
-        Thread servosUp = new Thread(upServos);
-        Thread servosDown = new Thread(downServos);
+//        MyRunnable3 upServos = new MyRunnable3(leftArmServo, rightArmServo);
+//        MyRunnable4 downServos = new MyRunnable4(leftArmServo, rightArmServo);
+//        Thread servosUp = new Thread(upServos);
+//        Thread servosDown = new Thread(downServos);
 
 
         waitForStart();
-        clawServo.setPosition(1);
-        Thread.sleep(1500);         // probably don't need to change this
-        servosUp.start();
-        Thread.sleep(2000);         // probably don't need to change this
         forward(drive_power);
-        Thread.sleep(1000);         // increase if doesn't go forward enough, decrease if too far forward
+        Thread.sleep(200);
         turnLeft(drive_power);
-        Thread.sleep(1100);         // increase if doesn't turn left enough, decrease if too far left
+        Thread.sleep(1000);
         forward(drive_power);
-        Thread.sleep(1800);         // increase if it doesn't go forward enough second time, decrease if too far forward
-        stopDriving();
-        clawServo.setPosition(0.85);
-        Thread.sleep(1000);         // probably don't need to change this
+        Thread.sleep(3500);
         backward(drive_power);
-        Thread.sleep(100);          // probably don't need to change this
+        Thread.sleep(100);
         stopDriving();
     }
 
