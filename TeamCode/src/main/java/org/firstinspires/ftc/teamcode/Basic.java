@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -69,87 +70,56 @@ import org.firstinspires.ftc.teamcode.util.MyRunnable2;
 //hi this yo mom
 @TeleOp(name="Basic: Omni Linear OpMode", group="Linear OpMode")
 
-public class Basic extends LinearOpMode
+public class Basic extends Base
 {
-    // Declare OpMode members for each of the 4 motors.
-    private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor leftFrontDrive = null;
-    private DcMotor leftBackDrive = null;
-    private DcMotor rightFrontDrive = null;
-    private DcMotor rightBackDrive = null;
-    private DcMotor leftSlide = null;
-    private DcMotor rightSlide = null;
-    private DcMotor beltMotor = null;
-    private DcMotor wheelIntakeMotor = null;
-    private Servo leftArmServo = null;
-    private Servo rightArmServo = null;
-    private Servo clawServo = null;
-    private Servo planeServo = null;
-
     @Override
     public void runOpMode() throws InterruptedException {
 
-        // Initialize the hardware variables. Note that the strings used here must correspond
-        // to the names assigned during the robot configuration step on the DS or RC devices.
-        leftFrontDrive = hardwareMap.get(DcMotor.class, "leftFrontMotor");
-        leftBackDrive = hardwareMap.get(DcMotor.class, "leftBackMotor");
-        rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFrontMotor");
-        rightBackDrive = hardwareMap.get(DcMotor.class, "rightBackMotor");
-        leftSlide = hardwareMap.get(DcMotor.class, "leftLinearSlide");
-        rightSlide = hardwareMap.get(DcMotor.class, "rightLinearSlide");
-        leftArmServo = hardwareMap.servo.get("leftArmServo");
-        rightArmServo = hardwareMap.servo.get("rightArmServo");
-        clawServo = hardwareMap.servo.get("clawServo");
-        planeServo = hardwareMap.servo.get("planeServo");
-        wheelIntakeMotor = hardwareMap.get(DcMotor.class, "wheelIntakeMotor");
-        beltMotor = hardwareMap.get(DcMotor.class, "beltMotor");
+        teleInitHardware();
 
-        // ########################################################################################
-        // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
-        // ########################################################################################
-        // Most robots need the motors on one side to be reversed to drive forward.
-        // The motor reversals shown here are for a "direct drive" robot (the wheels turn the same direction as the motor shaft)
-        // If your robot has additional gear reductions or uses a right-angled drive, it's important to ensure
-        // that your motors are turning in the correct direction.  So, start out with the reversals here, BUT
-        // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
-        // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
-        // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightSlide.setDirection(DcMotor.Direction.REVERSE);
-        leftArmServo.setDirection(Servo.Direction.REVERSE);
-        clawServo.setDirection(Servo.Direction.FORWARD);
-        wheelIntakeMotor.setDirection(DcMotor.Direction.REVERSE);
+        int leftEncoderStart = leftSlide.getCurrentPosition();
+        int rightEncoderStart = rightSlide.getCurrentPosition();
+        int leftTruss = leftSlide.getCurrentPosition() + 1900;
+        int rightTruss = rightSlide.getCurrentPosition() + 1900;
+        int leftLow = leftSlide.getCurrentPosition() + 600;
+        int rightLow = rightSlide.getCurrentPosition() + 600;
+        int leftLower = leftSlide.getCurrentPosition() + 300;
+        int rightLower = rightSlide.getCurrentPosition() + 300;
+        int leftLowest = leftSlide.getCurrentPosition() + 50;
+        int rightLowest = rightSlide.getCurrentPosition() + 50;
 
-        leftSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        double leftInitPos = leftBucketServo.getPosition();
+        double rightInitPos = rightBucketServo.getPosition();
 
-
-
-        // Wait for the game to start (driver presses PLAY)
-        telemetry.addData("Status", "Initialized");
+        telemetry.addData("Initialized: ", "Waiting for Start");
         telemetry.update();
-
-        double leftEncoderStart = leftSlide.getCurrentPosition();
-        double rightEncoderStart = rightSlide.getCurrentPosition();
-        double leftEncoderMid = leftSlide.getCurrentPosition() + 800;
-        double rightEncoderMid = rightSlide.getCurrentPosition() - 800;
-
 
         waitForStart();
         runtime.reset();
 
+
         // run until the end of the match (driver presses STOP)
-        while (opModeIsActive())
-        {
+        while (opModeIsActive()) {
+            telemetry.addData("Left Encoder Position: ", leftSlide.getCurrentPosition());
+            telemetry.addData("Right Encoder Position: ", rightSlide.getCurrentPosition());
+            telemetry.addData("Left Start Position: ", leftInitPos);
+            telemetry.addData("Right Start Position: ", rightInitPos);
+            telemetry.addData("Left Servo Position: ", leftBucketServo.getPosition());
+            telemetry.addData("Right Servo Position: ", rightBucketServo.getPosition());
+
+            telemetry.update();
+
             double max;
 
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
             double axial = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
             double lateral = gamepad1.left_stick_x;
             double yaw = gamepad1.right_stick_x;
+
+            if(gamepad1.left_bumper)
+            {
+                yaw = -gamepad1.right_stick_x;
+            }
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
@@ -190,45 +160,104 @@ public class Basic extends LinearOpMode
             */
 
             // Slows the wheels down by decreasing the variables for the power to the motors
-            if (gamepad1.left_trigger > 0)
+//            if (gamepad1.left_trigger > 0) {
+//                leftFrontPower *= 0.2;
+//                rightFrontPower *= 0.2;
+//                leftBackPower *= 0.2;
+//                rightFrontPower *= 0.2;
+//            }
+
+            if (gamepad1.left_bumper)
             {
-                leftFrontPower *= 0.2;
-                rightFrontPower *= 0.2;
-                leftBackPower *= 0.2;
-                rightFrontPower *= 0.2;
+                leftFrontPower *= -1;
+                rightFrontPower *= -1;
+                leftBackPower *= -1;
+                rightBackPower *= -1;
             }
 
-            if(gamepad1.left_bumper)
-            {
-                leftFrontPower *= 0.4;
-                rightFrontPower *= 0.4;
-                leftBackPower *= 0.4;
-                rightFrontPower *= 0.4;
+//            if(gamepad1.left_bumper)
+//            {
+//                leftFrontPower *= 0.4;
+//                rightFrontPower *= 0.4;
+//                leftBackPower *= 0.4;
+//                rightFrontPower *= 0.4;
+//            }
+
+//            if(gamepad1.right_trigger > 0)
+//            {
+//                leftFrontPower *= 0.6;
+//                rightFrontPower *= 0.6;
+//                leftBackPower *= 0.6;
+//                rightFrontPower *= 0.6;
+//            }
+
+            if (gamepad1.right_trigger > 0.5) {
+                leftFrontPower *= 0.7;
+                rightFrontPower *= 0.7;
+                leftBackPower *= 0.7;
+                rightFrontPower *= 0.7;
             }
 
-            if(gamepad1.right_trigger > 0)
+
+            boolean lastY2 = false;
+            boolean lastA2 = false;
+            boolean lastX2 = false;
+            boolean lastB2 = false;
+            boolean lastLeftStick2 = false;
+            boolean currentY2 = gamepad2.y;
+            boolean currentA2 = gamepad2.a;
+            boolean currentX2 = gamepad2.x;
+            boolean currentB2 = gamepad2.b;
+            boolean currentLeftStick2 = gamepad2.left_stick_button;
+            if (currentY2 && !lastY2)
             {
-                leftFrontPower *= 0.6;
-                rightFrontPower *= 0.6;
-                leftBackPower *= 0.6;
-                rightFrontPower *= 0.6;
+                hangSlides(leftSlide, rightSlide, leftTruss, rightTruss);
+            }
+            if(currentX2 && !lastX2)
+            {
+                hangSlides(leftSlide, rightSlide, leftLow, rightLow);
+            }
+            if (currentA2 && !lastA2)
+            {
+                lowerSlides(leftSlide, rightSlide, leftEncoderStart + 13, rightEncoderStart + 6);
+            }
+            if(currentB2 && !lastB2)
+            {
+                hangSlides(leftSlide, rightSlide, leftLower, rightLower);
+            }
+            if(currentLeftStick2 && !lastLeftStick2)
+            {
+                hangSlides(leftSlide, rightSlide, leftLowest, rightLowest);
             }
 
-            if(gamepad1.right_bumper)
+            if(leftSlide.getCurrentPosition() < 15)
             {
-                leftFrontPower *= 0.8;
-                rightFrontPower *= 0.8;
-                leftBackPower *= 0.8;
-                rightFrontPower *= 0.8;
+                leftSlide.setPower(0);
             }
+            if(rightSlide.getCurrentPosition() < 15)
+            {
+                rightSlide.setPower(0);
+            }
+            lastY2 = currentY2;
+            lastA2 = currentA2;
+            lastX2 = currentX2;
+            lastB2 = currentB2;
 
-            if(gamepad2.left_trigger > 0)
-            {
-                leftFrontPower *= 0;
-                rightFrontPower *= 0;
-                leftBackPower *= 0;
-                rightFrontPower *= 0;
-            }
+//            while(leftSlide.getCurrentPosition() < 10 && rightSlide.getCurrentPosition() < 10
+//                    && !leftSlide.isBusy() && !rightSlide.isBusy())
+//            {
+//                leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//                rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//            }
+
+
+//            if(gamepad2.left_trigger > 0)
+//            {
+//                leftFrontPower *= 0;
+//                rightFrontPower *= 0;
+//                leftBackPower *= 0;
+//                rightFrontPower *= 0;
+//            }
 
             // Send calculated power to wheels
             leftFrontDrive.setPower(leftFrontPower);
@@ -237,80 +266,112 @@ public class Basic extends LinearOpMode
             rightBackDrive.setPower(rightBackPower);
 
             // Show the elapsed game time and wheel power.
-            telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
-            telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
-            telemetry.update();
+//            telemetry.addData("Status", "Run Time: " + runtime.toString());
+//            telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
+//            telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
+//            telemetry.update();
 
 
-             // Uses player 2's thumbstick to bring the linear slides up and down
-             double liftPower = -gamepad2.left_stick_y;
-
-             // Contains the requests from the triggers to raise or lower the slides
-             leftSlide.setPower(liftPower);
-             rightSlide.setPower(liftPower);
-
-             wheelIntakeMotor.setPower(0);
-             beltMotor.setPower(0);
-
-             if(gamepad1.a)
-             {
-                 wheelIntakeMotor.setPower(1);
-                 beltMotor.setPower(1);
-             }
-             if(gamepad1.b)
-             {
-                 wheelIntakeMotor.setPower(-1);
-                 beltMotor.setPower(-1);
-             }
-
-
-//             if(gamepad2.a)
-//             {
-//                clawServo.setPosition(0);
-//             }
-             if(gamepad2.a)
-             {
-                 planeServo.setPosition(0);
-             }
-//             if(gamepad2.b)
-//             {
-//                 clawServo.setPosition(0.15);
-//             }
-//             if(gamepad2.b)
-//             {
-//                 planeServo.setPosition(0.15);
-//             }
-//             if(gamepad2.x)
-//             {
-//                 clawServo.setPosition(0.30);
-//             }
-//             if(gamepad2.x)
-//             {
-//                 planeServo.setPosition(0.30);
-//             }
+//            // Uses player 2's thumbstick to bring the linear slides up and down
+//            double liftPower = -gamepad2.left_stick_y;
 //
-//
-//             if(gamepad2.left_bumper)
-//                 clawServo.setPosition(0.8);
-//             if(gamepad2.right_bumper)
-//                 clawServo.setPosition(1);
-//
-//
-//             if(gamepad1.a)
-//                 planeServo.setPosition(0.5);
+//            // Contains the requests from the triggers to raise or lower the slides
+//            leftSlide.setPower(liftPower);
+//            rightSlide.setPower(liftPower);
 
-//        public void raiseArms()
-//        {
-//            leftArmServo.setPosition(0.3);
-//            rightArmServo.setPosition(0.3);
-//        }
-//
-//        public void lowerArms()
-//        {
-//            leftArmServo.setPosition(0);
-//            rightArmServo.setPosition(0);
-//        }
+            wheelIntakeMotor.setPower(0);
+            beltMotor.setPower(0);
+
+            // Extra convoluted steps to make bucket wheel work
+            boolean pressLeftBumper = false;
+            boolean pressRight = false;
+            if(gamepad2.left_bumper || gamepad1.a)
+            {
+                pressLeftBumper = true;
+            }
+            if(gamepad2.dpad_right)
+            {
+                pressRight = true;
+            }
+            if(!pressLeftBumper && !pressRight)
+            {
+                wheelServo.setPower(0);
+            }
+            if(pressRight)
+            {
+                wheelServo.setPower(-1);
+            }
+            if(pressLeftBumper)
+            {
+                wheelServo.setPower(1);
+                wheelIntakeMotor.setPower(1);
+                beltMotor.setPower(1);
+            }
+
+            if(gamepad1.b)
+            {
+                wheelIntakeMotor.setPower(-1);
+                beltMotor.setPower(-1);
+            }
+
+
+            if(gamepad2.dpad_up)
+            {
+                leftBucketServo.setPosition(0.40);
+            }
+            if(gamepad2.dpad_up)
+            {
+                rightBucketServo.setPosition(0.40);
+            }
+            if(gamepad2.dpad_left)
+            {
+                leftBucketServo.setPosition(0.10);
+            }
+            if(gamepad2.dpad_left)
+            {
+                rightBucketServo.setPosition(0.10);
+            }
+            if(gamepad2.dpad_down)
+            {
+                leftBucketServo.setPosition(0.0085);
+            }
+            if(gamepad2.dpad_down)
+            {
+                rightBucketServo.setPosition(0.0085);
+            }
+
+            if(gamepad2.right_bumper)
+            {
+                leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                leftSlide.setPower(-gamepad2.right_stick_y);
+                rightSlide.setPower(-gamepad2.right_stick_y);
+            }
+
+
+
+            if(gamepad1.right_stick_button)
+            {
+                planeServo.setPosition(0);
+            }
         }
     }
+        public void hangSlides(DcMotor leftHook, DcMotor rightHook, int leftHeight, int rightHeight)
+        {
+            leftHook.setTargetPosition(leftHeight);
+            leftHook.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            leftHook.setPower(1);
+            rightHook.setTargetPosition(rightHeight);
+            rightHook.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            rightHook.setPower(1);
+        }
+        public void lowerSlides(DcMotor leftHook, DcMotor rightHook, int leftHeight, int rightHeight)
+        {
+            leftHook.setTargetPosition(leftHeight);
+            leftHook.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            leftHook.setPower(1);
+            rightHook.setTargetPosition(rightHeight);
+            rightHook.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            rightHook.setPower(1);
+        }
 }

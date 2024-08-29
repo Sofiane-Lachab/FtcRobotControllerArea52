@@ -1,152 +1,318 @@
 /*
-Copyright (c) 2023 FIRST
+ * Copyright (c) 2019 OpenFTC Team
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-All rights reserved.
+package org.firstinspires.ftc.teamcode;
 
-Redistribution and use in source and binary forms, with or without modification,
-are permitted (subject to the limitations in the disclaimer below) provided that
-the following conditions are met:
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-Redistributions of source code must retain the above copyright notice, this list
-of conditions and the following disclaimer.
-
-Redistributions in binary form must reproduce the above copyright notice, this
-list of conditions and the following disclaimer in the documentation and/or
-other materials provided with the distribution.
-
-Neither the name of FIRST nor the names of its contributors may be used to
-endorse or promote products derived from this software without specific prior
-written permission.
-
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
-LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-package org.firstinspires.ftc.robotcontroller.external.samples;
-
-        import com.qualcomm.hardware.dfrobot.HuskyLens;
-        import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
-        import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-        import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-        import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-        import com.qualcomm.robotcore.hardware.DistanceSensor;
-
-        import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-        import org.firstinspires.ftc.robotcore.internal.system.Deadline;
-
-        import java.util.concurrent.TimeUnit;
-
-        import org.firstinspires.ftc.teamcode.util.AssetsTrajectoryManager;
-
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.openftc.easyopencv.OpenCvWebcam;
+import org.openftc.easyopencv.OpenCvPipeline;
 
 /*
- * This OpMode illustrates how to use the DFRobot HuskyLens.
- *
- * The HuskyLens is a Vision Sensor with a built-in object detection model.  It can
- * detect a number of predefined objects and AprilTags in the 36h11 family, can
- * recognize colors, and can be trained to detect custom objects. See this website for
- * documentation: https://wiki.dfrobot.com/HUSKYLENS_V1.0_SKU_SEN0305_SEN0336
- *
- * This sample illustrates how to detect AprilTags, but can be used to detect other types
- * of objects by changing the algorithm. It assumes that the HuskyLens is configured with
- * a name of "huskylens".
- *
- * Use Android Studio to Copy this67 Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
+ * This version of the internal camera example uses EasyOpenCV's interface to the
+ * original Android camera API
  */
-@TeleOp(name = "Sensor: HuskyLens", group = "Sensor")
-@Disabled
-public class Camera extends LinearOpMode {
-
-    private final int READ_PERIOD = 1;
-
-    private HuskyLens huskyLens;
+@TeleOp
+public class Camera extends LinearOpMode
+{
+    OpenCvCamera webcam;
 
     @Override
     public void runOpMode()
     {
-        huskyLens = hardwareMap.get(HuskyLens.class, "huskylens");
-
         /*
-         * This sample rate limits the reads solely to allow a user time to observe
-         * what is happening on the Driver Station telemetry.  Typical applications
-         * would not likely rate limit.
-         */
-        Deadline rateLimit = new Deadline(READ_PERIOD, TimeUnit.SECONDS);
-
-        /*
-         * Immediately expire so that the first time through we'll do the read.
-         */
-        rateLimit.expire();
-
-        /*
-         * Basic check to see if the device is alive and communicating.  This is not
-         * technically necessary here as the HuskyLens class does this in its
-         * doInitialization() method which is called when the device is pulled out of
-         * the hardware map.  However, sometimes it's unclear why a device reports as
-         * failing on initialization.  In the case of this device, it's because the
-         * call to knock() failed.
-         */
-        if (!huskyLens.knock()) {
-            telemetry.addData(">>", "Problem communicating with " + huskyLens.getDeviceName());
-        } else {
-            telemetry.addData(">>", "Press start to continue");
-        }
-
-        /*
-         * The device uses the concept of an algorithm to determine what types of
-         * objects it will look for and/or what mode it is in.  The algorithm may be
-         * selected using the scroll wheel on the device, or via software as shown in
-         * the call to selectAlgorithm().
+         * Instantiate an OpenCvCamera object for the camera we'll be using.
+         * In this sample, we're using a webcam. Note that you will need to
+         * make sure you have added the webcam to your configuration file and
+         * adjusted the name here to match what you named it in said config file.
          *
-         * The SDK itself does not assume that the user wants a particular algorithm on
-         * startup, and hence does not set an algorithm.
-         *
-         * Users, should, in general, explicitly choose the algorithm they want to use
-         * within the OpMode by calling selectAlgorithm() and passing it one of the values
-         * found in the enumeration HuskyLens.Algorithm.
+         * We pass it the view that we wish to use for camera monitor (on
+         * the RC phone). If no camera monitor is desired, use the alternate
+         * single-parameter constructor instead (commented out below)
          */
-        huskyLens.selectAlgorithm(HuskyLens.Algorithm.TAG_RECOGNITION);
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
 
+
+        // OR...  Do Not Activate the Camera Monitor View
+        //webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
+
+        /*
+         * Specify the image processing pipeline we wish to invoke upon receipt
+         * of a frame from the camera. Note that switching pipelines on-the-fly
+         * (while a streaming session is in flight) *IS* supported.
+         */
+        webcam.setPipeline(new PropLocationPipeline());
+
+        /*
+         * Open the connection to the camera device. New in v1.4.0 is the ability
+         * to open the camera asynchronously, and this is now the recommended way
+         * to do it. The benefits of opening async include faster init time, and
+         * better behavior when pressing stop during init (i.e. less of a chance
+         * of tripping the stuck watchdog)
+         *
+         * If you really want to open synchronously, the old method is still available.
+         */
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                /*
+                 * Tell the webcam to start streaming images to us! Note that you must make sure
+                 * the resolution you specify is supported by the camera. If it is not, an exception
+                 * will be thrown.
+                 *
+                 * Keep in mind that the SDK's UVC driver (what OpenCvWebcam uses under the hood) only
+                 * supports streaming from the webcam in the uncompressed YUV image format. This means
+                 * that the maximum resolution you can stream at and still get up to 30FPS is 480p (640x480).
+                 * Streaming at e.g. 720p will limit you to up to 10FPS and so on and so forth.
+                 *
+                 * Also, we specify the rotation that the webcam is used in. This is so that the image
+                 * from the camera sensor can be rotated such that it is always displayed with the image upright.
+                 * For a front facing camera, rotation is defined assuming the user is looking at the screen.
+                 * For a rear facing camera or a webcam, rotation is defined assuming the camera is facing
+                 * away from the user.
+                 */
+                webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
+            }
+
+            @Override
+            public void onError(int errorCode)
+            {
+                /*
+                 * This will be called if the camera could not be opened
+                 */
+            }
+        });
+
+        telemetry.addLine("Waiting for start");
         telemetry.update();
+
+        /*
+         * Wait for the user to press start on the Driver Station
+         */
         waitForStart();
 
-        /*
-         * Looking for AprilTags per the call to selectAlgorithm() above.  A handy grid
-         * for testing may be found at https://wiki.dfrobot.com/HUSKYLENS_V1.0_SKU_SEN0305_SEN0336#target_20.
-         *
-         * Note again that the device only recognizes the 36h11 family of tags out of the box.
-         */
-        while(opModeIsActive()) {
-            if (!rateLimit.hasExpired()) {
-                continue;
-            }
-            rateLimit.reset();
+        while (opModeIsActive())
+        {
+            /*
+             * Send some stats to the telemetry
+             */
+            telemetry.addData("Frame Count", webcam.getFrameCount());
+            telemetry.addData("FPS", String.format("%.2f", webcam.getFps()));
+            telemetry.addData("Total frame time ms", webcam.getTotalFrameTimeMs());
+            telemetry.addData("Pipeline time ms", webcam.getPipelineTimeMs());
+            telemetry.addData("Overhead time ms", webcam.getOverheadTimeMs());
+            telemetry.addData("Theoretical max FPS", webcam.getCurrentPipelineMaxFps());
+            telemetry.update();
 
             /*
-             * All algorithms, except for LINE_TRACKING, return a list of Blocks where a
-             * Block represents the outline of a recognized object along with its ID number.
-             * ID numbers allow you to identify what the device saw.  See the HuskyLens documentation
-             * referenced in the header comment above for more information on IDs and how to
-             * assign them to objects.
-             *
-             * Returns an empty array if no objects are seen.
+             * NOTE: stopping the stream from the camera early (before the end of the OpMode
+             * when it will be automatically stopped for you) *IS* supported. The "if" statement
+             * below will stop streaming from the camera when the "A" button on gamepad 1 is pressed.
              */
-            HuskyLens.Block[] blocks = huskyLens.blocks();
-            telemetry.addData("Block count", blocks.length);
-            for (int i = 0; i < blocks.length; i++) {
-                telemetry.addData("Block", blocks[i].toString());
+            if(gamepad1.a)
+            {
+                /*
+                 * IMPORTANT NOTE: calling stopStreaming() will indeed stop the stream of images
+                 * from the camera (and, by extension, stop calling your vision pipeline). HOWEVER,
+                 * if the reason you wish to stop the stream early is to switch use of the camera
+                 * over to, say, Vuforia or TFOD, you will also need to call closeCameraDevice()
+                 * (commented out below), because according to the Android Camera API documentation:
+                 *         "Your application should only have one Camera object active at a time for
+                 *          a particular hardware camera."
+                 *
+                 * NB: calling closeCameraDevice() will internally call stopStreaming() if applicable,
+                 * but it doesn't hurt to call it anyway, if for no other reason than clarity.
+                 *
+                 * NB2: if you are stopping the camera stream to simply save some processing power
+                 * (or battery power) for a short while when you do not need your vision pipeline,
+                 * it is recommended to NOT call closeCameraDevice() as you will then need to re-open
+                 * it the next time you wish to activate your vision pipeline, which can take a bit of
+                 * time. Of course, this comment is irrelevant in light of the use case described in
+                 * the above "important note".
+                 */
+                webcam.stopStreaming();
+                //phoneCam.closeCameraDevice();
             }
 
-            telemetry.update();
+            /*
+             * For the purposes of this sample, throttle ourselves to 10Hz loop to avoid burning
+             * excess CPU cycles for no reason. (By default, telemetry is only sent to the DS at 4Hz
+             * anyway). Of course in a real OpMode you will likely not want to do this.
+             */
+//            sleep(100);
+        }
+    }
+
+    /*
+     * An example image processing pipeline to be run upon receipt of each frame from the camera.
+     * Note that the processFrame() method is called serially from the frame worker thread -
+     * that is, a new camera frame will not come in while you're still processing a previous one.
+     * In other words, the processFrame() method will never be called multiple times simultaneously.
+     *
+     * However, the rendering of your processed image to the viewport is done in parallel to the
+     * frame worker thread. That is, the amount of time it takes to render the image to the
+     * viewport does NOT impact the amount of frames per second that your pipeline can process.
+     *
+     * IMPORTANT NOTE: this pipeline is NOT invoked on your OpMode thread. It is invoked on the
+     * frame worker thread. This should not be a problem in the vast majority of cases. However,
+     * if you're doing something weird where you do need it synchronized with your OpMode thread,
+     * then you will need to account for that accordingly.
+     */
+    class PropLocationPipeline extends OpenCvPipeline
+    {
+        boolean viewportPaused = false;
+        private String location = "nothing"; // output
+        public Scalar lower = new Scalar(155, 75, 130); // HSV threshold bounds
+        public Scalar upper = new Scalar(170, 130, 255);
+
+        private Mat hsvMat = new Mat(); // converted image
+        private Mat binaryMat = new Mat(); // imamge analyzed after thresholding
+        private Mat maskedInputMat = new Mat();
+
+        // Rectangle regions to be scanned
+        private Point topLeft1 = new Point(10, 0), bottomRight1 = new Point(40, 20);
+        private Point topLeft2 = new Point(10, 0), bottomRight2 = new Point(40, 20);
+        private Point topLeft3 = new Point(10, 0), bottomRight3 = new Point(40, 20);
+
+
+
+        /*
+         * NOTE: if you wish to use additional Mat objects in your processing pipeline, it is
+         * highly recommended to declare them here as instance variables and re-use them for
+         * each invocation of processFrame(), rather than declaring them as new local variables
+         * each time through processFrame(). This removes the danger of causing a memory leak
+         * by forgetting to call mat.release(), and it also reduces memory pressure by not
+         * constantly allocating and freeing large chunks of memory.
+         */
+
+        @Override
+        public Mat processFrame(Mat input)
+        {
+            /*
+             * IMPORTANT NOTE: the input Mat that is passed in as a parameter to this method
+             * will only dereference to the same image for the duration of this particular
+             * invocation of this method. That is, if for some reason you'd like to save a copy
+             * of this particular frame for later use, you will need to either clone it or copy
+             * it to another Mat.
+             */
+
+            // Convert from BGR to HSV
+            Imgproc.cvtColor(input, hsvMat, Imgproc.COLOR_RGB2HSV);
+            Core.inRange(hsvMat, lower, upper, binaryMat);
+
+            // Scan both rectangle regions, keeping track of how many
+            // pixels meet the threshold value, indicated by the color white
+            // in the binary image
+            double leftCount = 0, middleCount = 0, rightCount = 0;
+            // process the pixel value for each rectangle  (255 = W, 0 = B)
+            for (int i = (int) topLeft1.x; i <= bottomRight1.x; i++) {
+                for (int j = (int) topLeft1.y; j <= bottomRight1.y; j++) {
+                    if (binaryMat.get(i, j)[0] == 255) {
+                        leftCount++;
+                    }
+                }
+            }
+
+            for (int i = (int) topLeft2.x; i <= bottomRight2.x; i++) {
+                for (int j = (int) topLeft2.y; j <= bottomRight2.y; j++) {
+                    if (binaryMat.get(i, j)[0] == 255) {
+                        middleCount++;
+                    }
+                }
+            }
+
+            for (int i = (int) topLeft3.x; i <= bottomRight3.x; i++) {
+                for (int j = (int) topLeft3.y; j <= bottomRight3.y; j++) {
+                    if (binaryMat.get(i, j)[0] == 255) {
+                        rightCount++;
+                    }
+                }
+            }
+
+            // Determine object location
+            if (leftCount > middleCount && leftCount > rightCount)
+            {
+                location = "Left";
+            }
+            else if (middleCount > leftCount && middleCount > rightCount)
+            {
+                location = "Middle";
+            }
+            else
+            {
+                location = "Right";
+            }
+
+            /**
+             * NOTE: to see how to get data from your pipeline to your OpMode as well as how
+             * to change which stage of the pipeline is rendered to the viewport when it is
+             * tapped, please see {@link PipelineStageSwitchingExample}
+             */
+
+            return input;
+        }
+
+        public String getLocation()
+        {
+            return location;
+        }
+
+        @Override
+        public void onViewportTapped()
+        {
+            /*
+             * The viewport (if one was specified in the constructor) can also be dynamically "paused"
+             * and "resumed". The primary use case of this is to reduce CPU, memory, and power load
+             * when you need your vision pipeline running, but do not require a live preview on the
+             * robot controller screen. For instance, this could be useful if you wish to see the live
+             * camera preview as you are initializing your robot, but you no longer require the live
+             * preview after you have finished your initialization process; pausing the viewport does
+             * not stop running your pipeline.
+             *
+             * Here we demonstrate dynamically pausing/resuming the viewport when the user taps it
+             */
+
+            viewportPaused = !viewportPaused;
+
+            if(viewportPaused)
+            {
+                webcam.pauseViewport();
+            }
+            else
+            {
+                webcam.resumeViewport();
+            }
         }
     }
 }
